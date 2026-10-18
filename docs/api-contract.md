@@ -1,8 +1,10 @@
 # 视界 · 前端接口契约
 
-本文只描述前端期望的 HTTP 契约，不包含后端实现。当前项目通过 `USE_MOCK = true`
-在本地模拟全部接口；后端就绪后，将 `config/index.ts` 中的 `USE_MOCK` 改为 `false`
-即可切换到真实请求。
+本文只描述前端使用的 HTTP 契约。前端默认连接 Python 后端
+（[sightspace-serve](https://github.com/kingcard1989/sightspace-serve)），
+`config/index.ts` 中 `USE_MOCK = false`；改为 `true` 可退回本地 Mock 演示。
+
+后端完整契约（含作品上传、删除）见后端仓库的 `docs/api.md`。
 
 ## 1. 基础约定
 
@@ -59,9 +61,14 @@ Base URL 在 `config/index.ts` 的 `API_BASE_URL` 中维护。Android 模拟器�
 | --- | --- | --- | --- |
 | 200 | `0` | 成功 | 取 `data` |
 | 400 | `40000` | 参数错误 | Toast 提示 `message` |
+| 400 | `40002` | 验证码已失效 | 提示重新获取 |
+| 400 | `40003` | 验证码不正确 | Toast 提示剩余次数 |
 | 401 | `40101` | 未登录或凭证无效 | 清理本地会话；受保护页面回到登录页 |
+| 404 | `40401` | 资源不存在 | Toast 提示 |
 | 409 | `40901` | 手机号已注册 | 注册页 Toast 提示 |
+| 429 | `42901` | 频率限制 / 验证码尝试过多 | Toast 提示等待时间 |
 | 500 | `50000` | 服务异常 | Toast / 错误态，可重试 |
+| 502 | `50201` | 短信发送失败 | Toast 提示稍后重试 |
 
 非 2xx 响应也建议返回统一信封，便于前端读取 `message`；若无法返回 JSON，
 前端会回退为“请求失败（状态码）”。
@@ -104,7 +111,49 @@ Base URL 在 `config/index.ts` 的 `API_BASE_URL` 中维护。Android 模拟器�
 
 - `401 / 40101`：手机号或密码不正确。
 
-### 2.2 注册
+### 2.2 发送验证码
+
+`POST /auth/verification-code`
+
+无需鉴权。
+
+请求：
+
+```json
+{
+  "phone": "13900000000",
+  "scene": "register"
+}
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `phone` | `string` | 中国大陆手机号 |
+| `scene` | `register \| reset_password` | 注册 / 找回密码 |
+
+响应 `data`：
+
+```json
+{
+  "expiresIn": 300,
+  "cooldown": 60,
+  "debugCode": "420467"
+}
+```
+
+- `expiresIn`：验证码有效期（秒）；
+- `cooldown`：前端倒计时秒数，倒计时结束前禁用按钮；
+- `debugCode`：仅后端 `DEBUG=true` 时返回，前端显示“开发模式验证码”提示；
+  生产环境为 `null`，不能依赖该字段。
+
+失败：
+
+- `409 / 40901`：注册场景下手机号已存在；
+- `429 / 42901`：冷却中、小时/日限额或 IP 限额。
+
+前端在 `modules/auth/useVerificationCode.ts` 中统一处理倒计时与提示。
+
+### 2.3 注册
 
 `POST /auth/register`
 
@@ -116,7 +165,8 @@ Base URL 在 `config/index.ts` 的 `API_BASE_URL` 中维护。Android 模拟器�
 {
   "phone": "13900000000",
   "nickname": "新用户",
-  "password": "123456"
+  "password": "123456",
+  "code": "420467"
 }
 ```
 
@@ -124,12 +174,14 @@ Base URL 在 `config/index.ts` 的 `API_BASE_URL` 中维护。Android 模拟器�
 
 失败：
 
-- `409 / 40901`：该手机号已注册。
+- `40002 / 40003`：验证码失效或错误；
+- `409 / 40901`：该手机号已注册；
+- `429 / 42901`：验证码尝试次数过多。
 
 服务端需校验：手机号格式、昵称 2–12 个字符、密码 6–20 位；密码必须哈希存储，
 不得明文落库，也不得在响应中返回。
 
-### 2.3 退出登录
+### 2.4 退出登录
 
 `POST /auth/logout`
 
@@ -139,7 +191,33 @@ Base URL 在 `config/index.ts` 的 `API_BASE_URL` 中维护。Android 模拟器�
 
 前端在调用后立即清理本地 token 与用户缓存；接口失败也不会阻断退出。
 
-### 2.4 发现页列表
+### 2.5 重置密码
+
+`POST /auth/password/reset`
+
+无需鉴权。验证码场景必须是 `reset_password`。
+
+请求：
+
+```json
+{
+  "phone": "13900000000",
+  "code": "420467",
+  "newPassword": "654321"
+}
+```
+
+响应 `data`: `null`。
+
+失败：
+
+- `40002 / 40003`：验证码失效或错误；
+- `404 / 40401`：该手机号尚未注册；
+- `429 / 42901`：验证码尝试次数过多。
+
+成功后后端会吊销该用户全部旧会话，前端清理本地会话并回到登录页。
+
+### 2.6 发现页列表
 
 `GET /feed`
 
@@ -175,7 +253,7 @@ Query：
   不会写死第几张图在哪个位置。
 - 图片 CDN 建议按列宽提供多尺寸，避免加载原图造成流量浪费。
 
-### 2.5 当前用户资料
+### 2.7 当前用户资料
 
 `GET /users/me`
 
@@ -202,7 +280,7 @@ Query：
 
 `stats` 与个人页的“作品 / 粉丝 / 关注”一一对应。
 
-### 2.6 个人页画廊
+### 2.8 个人页画廊
 
 `GET /users/me/gallery`
 
@@ -244,12 +322,13 @@ Query：
 | 行为 | Mock | 真实后端 |
 | --- | --- | --- |
 | 数据来源 | 本地静态生成 + localStorage | PostgreSQL |
-| 密码 | 明文保存在本地，仅用于演示 | 必须 bcrypt / argon2 哈希 |
-| Token | `mock-token:<userId>:<timestamp>` | 推荐 JWT 或 opaque token |
+| 密码 | 明文保存在本地，仅用于演示 | bcrypt cost 12 |
+| Token | `mock-token:<userId>:<timestamp>` | 数据库不透明 token，服务端只存 SHA-256 |
+| 验证码 | 页面直接显示 `debugCode` | 开发模式返回 `debugCode`，生产走短信 |
 | 延迟 | 约 420–580ms | 以实际网络为准 |
-| 演示账号 | `13800138000 / 123456` | 由种子数据决定 |
+| 演示账号 | `13800138000 / 123456` | 同左，由种子数据生成 |
 
-Mock 账号仅用于前端阶段验收，不得复制到生产环境。
+Mock 账号仅用于前端演示，不得复制到生产环境。
 
 ## 5. 联调注意事项
 

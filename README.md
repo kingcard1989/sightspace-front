@@ -3,11 +3,26 @@
 一款以图片发现与轻量编辑为核心的前端演示 App。使用标准 **uni-app (Vue 3 + TypeScript)**
 开发，面向 Android App，H5 用于开发调试。
 
-当前阶段只包含前端：登录 / 注册、发现瀑布流、个人空间、编辑页与 AI 区域滤镜。
-AI 分割使用 ONNX Runtime Web 在设备本地推理，图片不上传服务器；业务数据仍由本地
-Mock 提供，尚未接入真实后端。
+包含登录 / 注册 / 找回密码、发现瀑布流、个人空间、编辑页与 AI 区域滤镜。
+AI 分割使用 ONNX Runtime Web 在设备本地推理，图片不上传服务器；账号、作品与
+信息流连接 Python FastAPI 后端（[sightspace-serve](https://github.com/kingcard1989/sightspace-serve)）。
 
 ## 快速开始
+
+### 先启动后端
+
+前端默认请求 `http://localhost:3000/api`。首次运行先进入后端仓库，双击
+`start-backend.bat`：
+
+```text
+https://github.com/kingcard1989/sightspace-serve
+```
+
+脚本会自动创建 Python 虚拟环境、初始化项目专用 PostgreSQL 集群、执行迁移、
+生成演示数据并启动 FastAPI。成功后打开 `http://localhost:3000/docs` 可确认接口。
+
+开发模式（`DEBUG=true`）下，验证码会打印在后端窗口，并随发送接口返回；
+注册页与重置密码页会显示“开发模式验证码”，点击即可填入。
 
 ### 环境
 
@@ -43,14 +58,14 @@ Mock 提供，尚未接入真实后端。
 
 ## 演示账号
 
-Mock 模式内置一个演示账号，数据包含 9 张画廊作品：
+后端种子数据包含一个演示账号，画廊中有 9 张作品：
 
 ```text
 手机号：13800138000
 密码：123456
 ```
 
-新注册的账号会写入浏览器 / App 本地缓存，刷新后仍可登录；其画廊、收藏、草稿均为空。
+新注册的账号写入 PostgreSQL，刷新或换设备后仍可登录；其画廊、收藏、草稿均为空。
 
 ## 页面与功能
 
@@ -61,7 +76,8 @@ Mock 模式内置一个演示账号，数据包含 9 张画廊作品：
 | AI 自检 `/pages/editor/ai-test` | 真机环境诊断；检查 ORT、WASM、模型读取、推理与区域识别 |
 | 我的 `/pages/profile/index` | 登录后可见；画廊 / 收藏 / 草稿分段；三列方形网格；下拉刷新；右上角菜单退出登录 |
 | 登录 `/pages/auth/login` | 手机号 + 密码；字段内联校验；协议弹层；成功后回“我的” |
-| 注册 `/pages/auth/register` | 手机号、昵称、密码、确认密码；注册成功自动登录 |
+| 注册 `/pages/auth/register` | 手机号、短信验证码、昵称、密码；注册成功自动登录 |
+| 重置密码 `/pages/auth/reset` | 手机号、验证码、新密码；成功后回到登录页 |
 
 交互约定：
 
@@ -82,11 +98,11 @@ Mock 模式内置一个演示账号，数据包含 9 张画廊作品：
 开关在 `config/index.ts`：
 
 ```ts
-export const USE_MOCK = true
+export const USE_MOCK = false
 ```
 
-- `USE_MOCK = true`：所有接口走 `modules/*/mock.ts`，无网络请求。
-- `USE_MOCK = false`：通过 `shared/api/request.ts` 请求真实后端。
+- `USE_MOCK = false`：通过 `shared/api/request.ts` 请求 FastAPI 后端（默认）；
+- `USE_MOCK = true`：所有接口走 `modules/*/mock.ts`，无网络请求，适合离线演示。
 
 后端地址：
 
@@ -95,12 +111,15 @@ export const USE_MOCK = true
 http://localhost:3000/api
 // Android 模拟器访问宿主机
 http://10.0.2.2:3000/api
+// 真机：把 LAN_HOST 改成电脑局域网 IP，例如 '192.168.1.23'
+const LAN_HOST = ''
 ```
 
-真机调试时请将 `API_BASE_URL` 改为电脑的局域网 IP。接口字段、分页结构、鉴权与
-错误码见 [docs/api-contract.md](docs/api-contract.md)。
+真机调试时填写 `LAN_HOST`，并确保手机和电脑在同一 Wi-Fi、后端监听 `0.0.0.0`、
+防火墙放行 3000 端口。接口字段、分页结构、鉴权与错误码见
+[docs/api-contract.md](docs/api-contract.md)。
 
-> 本项目只做前端。本仓库不包含 Node.js / Express / Prisma / PostgreSQL 的任何代码。
+后端仓库：[kingcard1989/sightspace-serve](https://github.com/kingcard1989/sightspace-serve)。
 
 ## 目录结构
 
@@ -115,9 +134,9 @@ http://10.0.2.2:3000/api
 │  ├─ editor/index.vue
 │  ├─ editor/ai-test.vue      # 真机 AI 分割自检
 │  ├─ profile/index.vue
-│  └─ auth/login.vue、register.vue
+│  └─ auth/login.vue、register.vue、reset.vue
 ├─ modules/                   # 按业务模块拆分
-│  ├─ auth/                   # 类型、API、Mock、Mock 用户表、store、品牌/协议组件
+│  ├─ auth/                   # 类型、API、Mock、验证码倒计时、store、品牌/协议组件
 │  ├─ discover/               # 类型、常量、瀑布流布局算法、API、Mock、store、组件
 │  ├─ profile/                # 类型、常量、API、Mock、store、个人页组件
 │  └─ editor/                 # 类型、常量、store、选图、画布、renderjs AI 推理、6 个面板
@@ -162,11 +181,14 @@ http://10.0.2.2:3000/api
   [docs/ai-segmentation.md](docs/ai-segmentation.md)。
 - 发现页搜索、菜单、作品详情、编辑资料等入口为占位 toast。
 - 头像使用首字母渐变占位，暂不支持上传。
-- Mock 密码以明文保存在本地，仅用于前端演示；真实后端必须使用 bcrypt / argon2。
-- 后端数据库设计与实现不在本项目范围内。
+- 收藏与草稿接口目前返回空数组，对应页面展示空态。
+- 编辑结果尚未上传后端；作品上传接口已在后端实现，前端保存流程待接入。
 
 ## 文档
 
 - [前端接口契约](docs/api-contract.md)
 - [设计令牌与组件规格](docs/design-tokens.md)
 - [AI 分割与真机验证](docs/ai-segmentation.md)
+- 后端文档：[API](https://github.com/kingcard1989/sightspace-serve/blob/main/docs/api.md)、
+  [数据库设计](https://github.com/kingcard1989/sightspace-serve/blob/main/docs/database-design.md)、
+  [验证码原理](https://github.com/kingcard1989/sightspace-serve/blob/main/docs/verification-code.md)
