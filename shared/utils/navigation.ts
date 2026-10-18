@@ -8,6 +8,7 @@ const ROUTES = {
   profile: '/pages/profile/index',
   login: '/pages/auth/login',
   register: '/pages/auth/register',
+  resetPassword: '/pages/auth/reset',
 } as const
 
 function currentRoute(): string {
@@ -70,6 +71,11 @@ export function openLogin(redirect: 'profile' | 'discover' = 'profile', replace 
 export function openRegister(): void {
   if (currentRoute() === ROUTES.register) return
   uni.navigateTo({ url: ROUTES.register })
+}
+
+export function openResetPassword(): void {
+  if (currentRoute() === ROUTES.resetPassword) return
+  uni.navigateTo({ url: ROUTES.resetPassword })
 }
 
 /** 登录/注册成功后回到目标页面 */

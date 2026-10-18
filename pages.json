@@ -59,6 +59,16 @@
           "bounce": "none"
         }
       }
+    },
+    {
+      "path": "pages/auth/reset",
+      "style": {
+        "navigationStyle": "custom",
+        "disableScroll": true,
+        "app-plus": {
+          "bounce": "none"
+        }
+      }
     }
   ],
   "globalStyle": {

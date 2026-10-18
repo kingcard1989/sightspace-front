@@ -53,6 +53,9 @@
               @confirm="onSubmit"
             />
             <text v-if="errors.password" class="auth-field__error">{{ errors.password }}</text>
+            <view class="auth-forgot">
+              <text class="auth-forgot__link" @tap="onForgotPassword">忘记密码？</text>
+            </view>
           </view>
 
           <view class="auth-agreement">
@@ -92,7 +95,12 @@ import AppPage from '@/shared/components/AppPage.vue'
 import { useStatusBarStyle } from '@/shared/composables/useStatusBarStyle'
 import { errorMessage } from '@/shared/api/error'
 import { isPassword, isPhone } from '@/shared/utils/validate'
-import { finishAuth, goBack, openRegister } from '@/shared/utils/navigation'
+import {
+  finishAuth,
+  goBack,
+  openRegister,
+  openResetPassword,
+} from '@/shared/utils/navigation'
 import { showToast } from '@/shared/utils/toast'
 import AuthAgreement from '@/modules/auth/components/AuthAgreement.vue'
 import AuthBrand from '@/modules/auth/components/AuthBrand.vue'
@@ -156,6 +164,10 @@ async function onSubmit(): Promise<void> {
 
 function onRegister(): void {
   openRegister()
+}
+
+function onForgotPassword(): void {
+  openResetPassword()
 }
 
 function onBack(): void {
@@ -265,6 +277,20 @@ function onBack(): void {
 
 .auth-field__error--agreement {
   margin-left: dp(26);
+}
+
+.auth-forgot {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: dp(8);
+}
+
+.auth-forgot__link {
+  color: $sj-text-secondary;
+  font-size: dp(12);
+  line-height: 1.4;
 }
 
 .auth-agreement {

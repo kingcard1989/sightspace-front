@@ -30,6 +30,34 @@
 
           <view class="auth-field">
             <AppInput
+              :model-value="code"
+              type="number"
+              prefix-icon="check-accent"
+              placeholder="请输入 6 位验证码"
+              placeholder-style="color: #B5B5BE; font-size: 15px;"
+              :maxlength="6"
+              :error="Boolean(errors.code)"
+              @update:model-value="onCodeInput"
+            >
+              <template #suffix>
+                <view
+                  class="auth-code"
+                  :class="{ 'auth-code--disabled': codeButtonDisabled }"
+                  @tap="onSendCode"
+                >
+                  <view class="auth-code__divider" />
+                  <text class="auth-code__text">{{ codeButtonText }}</text>
+                </view>
+              </template>
+            </AppInput>
+            <text v-if="errors.code" class="auth-field__error">{{ errors.code }}</text>
+            <text v-else-if="debugCode" class="auth-code__hint" @tap="fillDebugCode">
+              开发模式验证码：{{ debugCode }}（点击填入）
+            </text>
+          </view>
+
+          <view class="auth-field">
+            <AppInput
               :model-value="nickname"
               prefix-icon="user-muted"
               placeholder="请输入昵称（2-12 个字符）"
@@ -110,10 +138,16 @@ import { useStatusBarStyle } from '@/shared/composables/useStatusBarStyle'
 import { errorMessage } from '@/shared/api/error'
 import { finishAuth, goBack, ROUTES } from '@/shared/utils/navigation'
 import { showToast } from '@/shared/utils/toast'
-import { isNickname, isPassword, isPhone } from '@/shared/utils/validate'
+import {
+  isNickname,
+  isPassword,
+  isPhone,
+  isVerificationCode,
+} from '@/shared/utils/validate'
 import AuthAgreement from '@/modules/auth/components/AuthAgreement.vue'
 import AuthBrand from '@/modules/auth/components/AuthBrand.vue'
 import { useAuthStore } from '@/modules/auth/store'
+import { useVerificationCode } from '@/modules/auth/useVerificationCode'
 import type { RegisterFormErrors } from '@/modules/auth/types'
 
 useStatusBarStyle('dark', '#FAFAFA')
@@ -121,14 +155,23 @@ useStatusBarStyle('dark', '#FAFAFA')
 const auth = useAuthStore()
 
 const phone = ref('')
+const code = ref('')
 const nickname = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const agreed = ref(false)
 const errors = reactive<RegisterFormErrors>({})
 
+const {
+  debugCode,
+  disabled: codeButtonDisabled,
+  buttonText: codeButtonText,
+  send: sendCode,
+} = useVerificationCode('register')
+
 function validate(): boolean {
   errors.phone = isPhone(phone.value) ? '' : '请输入正确的手机号'
+  errors.code = isVerificationCode(code.value) ? '' : '请输入 6 位验证码'
   errors.nickname = isNickname(nickname.value)
     ? ''
     : '昵称需为 2-12 个字符'
@@ -145,6 +188,23 @@ function validate(): boolean {
 function onPhoneInput(value: string): void {
   phone.value = value
   errors.phone = ''
+}
+
+function onCodeInput(value: string): void {
+  code.value = value.replace(/\D/g, '').slice(0, 6)
+  errors.code = ''
+}
+
+async function onSendCode(): Promise<void> {
+  errors.phone = isPhone(phone.value) ? '' : '请输入正确的手机号'
+  if (errors.phone) return
+  await sendCode(phone.value.trim())
+}
+
+function fillDebugCode(): void {
+  if (!debugCode.value) return
+  code.value = debugCode.value
+  errors.code = ''
 }
 
 function onNicknameInput(value: string): void {
@@ -179,6 +239,7 @@ async function onSubmit(): Promise<void> {
       phone: phone.value.trim(),
       nickname: nickname.value.trim(),
       password: password.value,
+      code: code.value.trim(),
     })
     showToast('注册成功')
     finishAuth('profile')
@@ -275,6 +336,41 @@ function onBack(): void {
 
 .auth-field__error--agreement {
   margin-left: dp(26);
+}
+
+.auth-code {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
+  height: dp(32);
+  margin-left: dp(8);
+}
+
+.auth-code__divider {
+  width: 1px;
+  height: dp(16);
+  background: $sj-border;
+}
+
+.auth-code__text {
+  margin-left: dp(10);
+  color: $sj-accent;
+  font-size: dp(13);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.auth-code--disabled .auth-code__text {
+  color: $sj-text-weak;
+}
+
+.auth-code__hint {
+  margin-top: dp(5);
+  margin-left: dp(4);
+  color: $sj-accent;
+  font-size: dp(11);
+  line-height: 1.4;
 }
 
 .auth-agreement {
