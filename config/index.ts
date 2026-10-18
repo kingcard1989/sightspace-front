@@ -12,10 +12,10 @@ export const DESIGN_WIDTH = 390
 
 /**
  * 是否使用本地 Mock。
- * 后端（Node.js + Express + Prisma + PostgreSQL）启动后，
- * 将 USE_MOCK 改为 false，并把 API_BASE_URL 指向后端即可。
+ * 已切换为 FastAPI 后端；把 USE_MOCK 改回 true 可离线演示，
+ * 此时验证码会直接显示在注册页上。
  */
-export const USE_MOCK = true
+export const USE_MOCK = false
 
 /** Mock 延迟（毫秒），便于观察加载态 */
 export const MOCK_DELAY = 420
@@ -32,11 +32,18 @@ export const PAGE_SIZE = 12
 /** 请求超时（毫秒） */
 export const REQUEST_TIMEOUT = 10000
 
+/**
+ * 真机调试时填写电脑的局域网 IP，例如 '192.168.1.23'。
+ * 留空时：Android 模拟器使用 10.0.2.2，H5 使用 localhost。
+ */
+const LAN_HOST = ''
+
 let apiBaseUrl = 'http://localhost:3000/api'
 
 // #ifdef APP-PLUS
-// Android 模拟器访问宿主机；真机调试请改为电脑局域网 IP
-apiBaseUrl = 'http://10.0.2.2:3000/api'
+apiBaseUrl = LAN_HOST
+  ? `http://${LAN_HOST}:3000/api`
+  : 'http://10.0.2.2:3000/api'
 // #endif
 
 // #ifdef H5
