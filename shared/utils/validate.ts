@@ -14,6 +14,11 @@ export function isNickname(value: string): boolean {
   return length >= 2 && length <= 12
 }
 
+/** 短信验证码：6 位数字 */
+export function isVerificationCode(value: string): boolean {
+  return /^\d{6}$/.test(value.trim())
+}
+
 export function requireValue(value: string): boolean {
   return value.trim().length > 0
 }

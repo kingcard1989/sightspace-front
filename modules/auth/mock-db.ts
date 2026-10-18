@@ -19,6 +19,9 @@ export const DEMO_USER_ID = 'u_demo'
 
 const DEMO_CREATED_AT = '2026-01-01T08:00:00.000Z'
 
+/** 演示账号的密码只允许在当前运行期间被 Mock 重置覆盖 */
+let demoPassword = DEMO_PASSWORD
+
 export function createDemoAccount(): MockAccount {
   return {
     user: {
@@ -30,7 +33,7 @@ export function createDemoAccount(): MockAccount {
       avatarUrl: '',
       createdAt: DEMO_CREATED_AT,
     },
-    password: DEMO_PASSWORD,
+    password: demoPassword,
     stats: {
       works: 128,
       followers: 2400,
@@ -109,6 +112,22 @@ export function createRegisteredAccount(params: {
   accounts.push(account)
   writeAccounts(accounts)
   return account
+}
+
+/** 仅用于 Mock 找回密码；真实后端的密码重置在服务端完成 */
+export function updateAccountPassword(phone: string, password: string): boolean {
+  const normalized = phone.trim()
+  if (normalized === DEMO_PHONE) {
+    demoPassword = password
+    return true
+  }
+
+  const accounts = readAccounts()
+  const account = accounts.find((item) => item.user.phone === normalized)
+  if (!account) return false
+  account.password = password
+  writeAccounts(accounts)
+  return true
 }
 
 export function createMockToken(userId: string): string {
