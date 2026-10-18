@@ -1,0 +1,211 @@
+// ============================================================
+// 视界 · 全局基础样式
+// ============================================================
+
+page {
+  height: 100%;
+  overflow: hidden;
+  background: $sj-bg;
+  color: $sj-text;
+  font-family: $sj-font-family;
+  font-size: dp($sj-font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: $sj-bg;
+}
+
+view,
+text,
+image,
+button,
+input,
+textarea,
+scroll-view,
+navigator {
+  box-sizing: border-box;
+}
+
+view {
+  display: block;
+}
+
+text {
+  display: inline;
+}
+
+image {
+  display: block;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+button::after {
+  border: none;
+}
+
+input,
+textarea {
+  font-family: inherit;
+}
+
+// 页面外壳
+.sj-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: $sj-bg;
+}
+
+.sj-page--canvas {
+  background: $sj-canvas;
+}
+
+// 真实系统状态栏占位
+.sj-statusbar {
+  flex-shrink: 0;
+  width: 100%;
+  height: var(--status-bar-height, 0px);
+  min-height: 0;
+  pointer-events: none;
+}
+
+// 弹性区域
+.sj-fill {
+  flex: 1;
+  min-height: 0;
+}
+
+.sj-scroll {
+  flex: 1;
+  width: 100%;
+  height: 0;
+  min-height: 0;
+}
+
+// 常用布局
+.sj-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.sj-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.sj-between {
+  justify-content: space-between;
+}
+
+.sj-center {
+  align-items: center;
+  justify-content: center;
+}
+
+.sj-ellipsis {
+  @include ellipsis;
+}
+
+.sj-hairline-top {
+  border-top: 1px solid $sj-border;
+}
+
+.sj-hairline-bottom {
+  border-bottom: 1px solid $sj-border;
+}
+
+.sj-tap {
+  @include pressable;
+}
+
+.sj-hover {
+  opacity: 0.68;
+}
+
+.sj-input-placeholder {
+  color: $sj-text-weak;
+}
+
+.sj-divider {
+  width: 1px;
+  height: dp(28);
+  background: $sj-border;
+}
+
+// H5 下隐藏滚动条
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+// ---------- 动画 ----------
+@keyframes sj-skeleton-pulse {
+  0% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes sj-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sj-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sj-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(dp(8)) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sj-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

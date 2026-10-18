@@ -1,0 +1,73 @@
+// ============================================================
+// 视界 · SCSS 工具函数与混入
+// 设计稿宽 390，750rpx = 屏幕宽度
+// ============================================================
+
+/// 将设计稿 px 转为 rpx（390 设计基准）
+@function dp($px) {
+  @return $px * 1.923076923rpx;
+}
+
+@mixin ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@mixin clamp-lines($lines: 2) {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $lines;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin absolute-fill {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+@mixin safe-area-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@mixin status-bar-height {
+  height: var(--status-bar-height);
+  min-height: 0;
+}
+
+@mixin hairline-top($color: $sj-border) {
+  border-top: 1px solid $color;
+}
+
+@mixin hairline-bottom($color: $sj-border) {
+  border-bottom: 1px solid $color;
+}
+
+@mixin no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@mixin pressable {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+@mixin skeleton-pulse {
+  animation: sj-skeleton-pulse 1.5s ease-in-out infinite;
+}

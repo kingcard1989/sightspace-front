@@ -1,0 +1,9 @@
+/**
+ * 视界 · 全局 SCSS 入口
+ *
+ * uni.scss 会被 uni-app 自动注入到每个页面/组件的 <style lang="scss"> 中，
+ * 因此 tokens 与 mixins 不需要在每个文件里重复 import。
+ */
+
+@import '@/shared/styles/tokens.scss';
+@import '@/shared/styles/mixins.scss';
